@@ -81,12 +81,15 @@ function getTask(catInd, rowInd) {
 }
 
 /* Adds task to calendar */
-function addTaskToCal(taskInfo) {
+function addTaskToCal(taskInfo, colorId) {
   var event = CalendarApp.getDefaultCalendar().createEvent(
     taskInfo.name,
     taskInfo.date,
     new Date(taskInfo.date.getTime() + 1),
     {description: taskInfo.id});
+  if (colorId != '') {
+    event.setColor(colorId);
+  }
   
   return event.getId();
 }
@@ -101,13 +104,15 @@ function updateCal(days) {
   }
   
   var timeMax = new Date((new Date()).getTime() + days * 3600000 * 24);
+  var colorId = readCell('Settings', 5, 3);
+  
   for (var i = 0; i < NUM_CATEGORIES; i++) {
     var catName = getCatName(i);
     for (var j = 0; j < COLUMN_LENGTH; j++) {
       var task = getTask(i, j);
       if (task && task.date >= (new Date()) && task.date < timeMax && !(task.id in ids)) {
         task.name = catName + ' ' + task.name;
-        addTaskToCal(task);
+        addTaskToCal(task, colorId);
       }
     }
   }
