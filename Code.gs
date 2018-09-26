@@ -1,5 +1,6 @@
 /* Settings */
 SPREADSHEET_ID = '1Uae2jFOZab0qpTuythyJCJ2uhapkYYy2uhlgj0hXA60';
+CALENDAR_ID = 'primary'
 TIMEZONE = 'GMT-8:00';
 NUM_CATEGORIES = 4;
 COLUMN_LENGTH = 96;
@@ -22,25 +23,24 @@ function setCell(ssName, row, col, value) {
 /* Generate an id value for a task */
 function genId(catInd, rowInd, name) {
   var id = 'SCS';
-  
+
   if (catInd < 10) {
     id += '0';
   }
   id += catInd.toString();
-  
+
   if (rowInd < 10) {
     id += '0';
   }
   id += rowInd.toString();
-  
+
   id += ' | ' + name;
-  
+
   return id;
 }
 
 /* Returns all events in the primary calendar within the next (days) days */
 function getCalendarEvents(days) {
-  var calendarId = 'primary';
   var optionalArgs = {
     timeMin: (new Date()).toISOString(),
     timeMax: (new Date((new Date()).getTime() + days * 3600000 * 24)).toISOString(),
@@ -48,15 +48,15 @@ function getCalendarEvents(days) {
     singleEvents: true,
     orderBy: 'startTime'
   };
-  
-  return Calendar.Events.list(calendarId, optionalArgs).items;
+
+  return Calendar.Events.list(CALENDAR_ID, optionalArgs).items;
 }
 
 /* Get category name from index */
 function getCatName(catInd) {
   var col = 5 * catInd + 14;
   var row = 2;
-  
+
   return readCell('Main', row, col);
 }
 
@@ -65,24 +65,24 @@ function getCatName(catInd) {
 function getTask(catInd, rowInd) {
   var col = 5 * catInd + 14;
   var row = rowInd + 4;
-  
+
   if (readCell('Main', row, col) === '') {
     return null;
   }
-  
+
   var taskInfo = {
     date: new Date(Utilities.formatDate(readCell('Main', row, col), 'GMT', 'MMMM d, y') + ' ' + Utilities.formatDate(readCell('Main', row, col + 1), TIMEZONE, 'HH:mm:ss')),
     name: readCell('Main', row, col + 2),
     status: readCell('Main', row, col + 3)
   }
   taskInfo.id = genId(catInd, rowInd, taskInfo.name);
-  
+
   return taskInfo;
 }
 
 /* Adds task to calendar */
 function addTaskToCal(taskInfo, colorId) {
-  var event = CalendarApp.getDefaultCalendar().createEvent(
+  var event = CalendarApp.getCalendarById(CALENDAR_ID).createEvent(
     taskInfo.name,
     taskInfo.date,
     new Date(taskInfo.date.getTime() + 1),
@@ -90,22 +90,22 @@ function addTaskToCal(taskInfo, colorId) {
   if (colorId != '') {
     event.setColor(colorId);
   }
-  
+
   return event.getId();
 }
 
 /* Updates the calendar for the next (days) days */
 function updateCal(days) {
   var events = getCalendarEvents(days);
-  
+
   var ids = {};
   for (var event in events) {
     ids[events[event].description] = 1;
   }
-  
+
   var timeMax = new Date((new Date()).getTime() + days * 3600000 * 24);
   var colorId = readCell('Settings', 5, 3);
-  
+
   for (var i = 0; i < NUM_CATEGORIES; i++) {
     var catName = getCatName(i);
     for (var j = 0; j < COLUMN_LENGTH; j++) {
@@ -130,7 +130,7 @@ function updateMonth() {
 
 /* Create the menu button
    Set to trigger when the spreadsheet is opened */
-function createMenu() { 
+function createMenu() {
   var ui = SpreadsheetApp.getUi()
   ui.createMenu('Calendar')
   .addItem('Update Week', 'updateWeek')
